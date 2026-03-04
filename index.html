@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyTech | KS4E Interactive Experience</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
+    <style>
+        :root {
+            --cyan: #00f2ff;
+            --space-black: #05070a;
+            --nebula: #162447;
+            --gold: #ffd700;
+        }
+
+        body {
+            background-color: var(--space-black);
+            color: #e0e6ed;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .font-mono { font-family: 'Share Tech Mono', monospace; }
+
+        /* Tech Background Scannline */
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 242, 255, 0.1);
+            position: fixed;
+            top: 0; left: 0;
+            z-index: 50;
+            pointer-events: none;
+            animation: scan 4s linear infinite;
+        }
+
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+
+        .glass {
+            background: rgba(22, 36, 71, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 242, 255, 0.1);
+        }
+
+        .glow-text { text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); }
+
+        .nav-link { transition: all 0.3s ease; position: relative; }
+        .nav-link:hover { color: var(--cyan); }
+
+        /* 3D Model Styling */
+        model-viewer {
+            width: 100%;
+            height: 550px;
+            background: radial-gradient(circle at center, #0a111f 0%, #020305 100%);
+            --poster-color: transparent;
+        }
+
+        /* Gallery Slideshow */
+        .slider-container {
+            display: flex;
+            overflow-x: scroll;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .slider-container::-webkit-scrollbar { display: none; }
+        .slide {
+            flex: 0 0 100%;
+            scroll-snap-align: start;
+            position: relative;
+            height: 600px; 
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .slide img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: brightness(0.9);
+            transition: filter 0.3s ease;
+        }
+        .slide:hover img { filter: brightness(1); }
+        
+        .slide-overlay {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            padding: 30px;
+            background: linear-gradient(transparent, rgba(5,7,10,0.9));
+            pointer-events: none;
+        }
+
+        /* PDF Viewer Styling */
+        .pdf-container {
+            height: 800px;
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.1);
+        }
+
+        /* Video Display */
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.1);
+            background: #000;
+        }
+        .video-wrapper video {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+        }
+
+        /* Comparison Table */
+        .comparison-table { border-collapse: separate; border-spacing: 0 8px; }
+        .comparison-table th { color: var(--cyan); text-transform: uppercase; font-family: 'Share Tech Mono'; padding: 20px; text-align: left; }
+        .comparison-table td { 
+            background: rgba(255,255,255,0.03); 
+            padding: 20px; 
+            border-top: 1px solid rgba(255,255,255,0.05); 
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
+        }
+
+        /* Simulator Terminal */
+        .terminal-container { background: #05070a; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .terminal-header { background: rgba(255,255,255,0.05); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .terminal-body { padding: 20px; height: 350px; overflow-y: auto; font-family: 'Share Tech Mono', monospace; color: #00ff41; font-size: 13px; line-height: 1.2; }
+        .ascii-banner { color: var(--cyan); margin-bottom: 15px; white-space: pre; font-size: 10px; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #05070a; }
+        ::-webkit-scrollbar-thumb { background: #162447; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-black">
+
+    <div class="scanline"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-40 glass border-b border-cyan-900/30 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden p-1">
+                    <img src="Image/KS4E_Logo.jpg" alt="PARKS Logo" class="object-contain">
+                </div>
+                <div>
+                    <span class="font-orbitron font-bold text-lg tracking-tighter text-cyan-400 block leading-none">KS4E</span>
+                    <span class="text-[8px] font-mono text-slate-500 uppercase">Kyutech Space Solutions for Emergings</span>
+                </div>
+            </div>
+            <div class="hidden md:flex space-x-6 font-mono text-[10px] uppercase tracking-widest">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#presenter" class="nav-link">Presenter</a>
+                <a href="#team" class="nav-link">Team</a>
+                <a href="#gallery" class="nav-link">Gallery</a>
+                <a href="#datasheet" class="nav-link text-cyan-400">Docs</a>
+                <a href="#video" class="nav-link">Cinema</a>
+                <a href="#hardware" class="nav-link">3D Explorer</a>
+                <a href="#terminal" class="nav-link">OBC Simulator</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="font-mono text-[10px] text-cyan-500 hidden sm:block uppercase">Status: Online</span>
+                <a href="https://github.com/BIRDSOpenSource" target="_blank" class="px-4 py-2 bg-cyan-500/10 border border-cyan-500/50 text-cyan-400 font-mono text-xs hover:bg-cyan-500 hover:text-black transition-all text-center">SOURCE</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="relative min-h-screen flex items-center pt-20 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center relative z-10">
+            <div class="animate-in fade-in slide-in-from-left duration-1000">
+                <p class="font-mono text-cyan-400 mb-4 tracking-[0.3em] uppercase tracking-widest">Kyutech Space Solutions</p>
+                <h1 class="font-orbitron text-5xl md:text-7xl font-bold leading-tight mb-6 uppercase">
+                    SkyTech <br><span class="text-cyan-400 glow-text">Training</span> Kit
+                </h1>
+                <p class="text-lg text-slate-400 max-w-lg mb-8 leading-relaxed">
+                    Under the <span class="text-white font-bold">PARKS Initiative</span>, we are commercializing flight-proven hardware to accelerate hands-on space engineering education.
+                </p>
+                
+                <div class="p-6 bg-white/5 border-l-2 border-cyan-500 mb-8 italic text-slate-300">
+                    "Our goal is to translate Kyutech's decades of satellite heritage into a hands-on experience that builds real indigenous space capacity."
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#gallery" class="inline-block px-8 py-4 bg-cyan-500 text-black font-orbitron font-bold hover:bg-white transition-all uppercase tracking-widest">View Gallery</a>
+                    <a href="#team" class="inline-block px-8 py-4 border border-cyan-500 text-cyan-400 font-orbitron font-bold hover:bg-cyan-500 hover:text-black transition-all uppercase tracking-widest">Meet Team</a>
+                </div>
+            </div>
+            <div class="relative">
+                <div id="hero-loading-overlay" class="absolute inset-0 z-10 bg-black/80 flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity">
+                        <div class="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+                <model-viewer id="hero-viewer" src="D:\03_Parks\OpensourcePresentation\OPS\3d\kit_g.glb" auto-rotate camera-controls shadow-intensity=".8" exposure="0.5">
+                    <div class="absolute top-6 right-6 p-4 glass text-right">
+                        <h4 class="font-orbitron text-lg text-white uppercase">1U Assembly</h4>
+                        <p class="text-[10px] font-mono text-cyan-500 uppercase">Interactive Preview</p>
+                    </div>
+                </model-viewer>
+            </div>
+        </div>
+    </section>
+
+    <!-- Presenter Section -->
+    <section id="presenter" class="py-24 glass border-y border-white/5">
+        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+            <div class="relative flex justify-center items-center order-2 md:order-1">
+                <div class="w-64 h-64 md:w-80 md:h-80 rounded-full border-4 border-cyan-500/30 overflow-hidden shadow-[0_0_50px_rgba(0,242,255,0.2)] group relative bg-black">
+                    <img src="Image/kafi.jpeg" alt="Lead Presenter" class="w-full h-full object-cover object-center grayscale group-hover:grayscale-0 transition-all duration-500" onerror="this.src='http://googleusercontent.com/image_collection/image_retrieval/18007779049976591336'">
+                </div>
+                <div class="absolute -bottom-4 bg-cyan-500 text-black font-orbitron text-[10px] font-bold px-4 py-2 rounded-full uppercase tracking-widest shadow-lg text-center">Abdulla Hil Kafi (OBC) </div>
+            </div>
+            <div class="order-1 md:order-2 text-center md:text-left">
+                <h4 class="font-mono text-cyan-500 text-sm uppercase mb-2 tracking-[0.3em]">Presenter</h4>
+                <h2 class="font-orbitron text-4xl font-bold mb-6 text-white uppercase leading-tight">Phd Student <br>Space Robotics Laboratory</h2>
+                <p class="text-slate-400 mb-6 leading-relaxed text-lg">
+                    PhD researcher in space robotics and lunar mission design, leading satellite innovations through BRAC ONNESHA, VERTECS, and Turan missions, advancing autonomy, systems engineering, and emerging space ecosystems globally.
+                </p>
+                <div class="p-6 bg-white/5 border-l-2 border-cyan-500 mb-8 italic text-slate-300">
+                    "Autonomous Lunar Regolith Excavation Rover with Meta-Reinforcement Learning and Digital Twin Integration"
+                </div>
+                <div class="flex space-x-6 items-center justify-center md:justify-start">
+                    <a href="#" class="text-slate-500 hover:text-cyan-400 transition-colors"><i class="fa-brands fa-linkedin-in text-2xl"></i></a>
+                    <a href="#" class="text-slate-500 hover:text-cyan-400 transition-colors"><i class="fa-brands fa-x-twitter text-2xl"></i></a>
+                    <a href="#" class="text-slate-500 hover:text-cyan-400 transition-colors"><i class="fa-regular fa-envelope text-2xl"></i></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section id="team" class="py-24 bg-black">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="font-orbitron text-4xl font-bold mb-4 uppercase tracking-tighter">Training KIT developers</h2>
+                <p class="font-mono text-slate-500 uppercase text-xs tracking-widest">The engineers behind the SkyTech architecture</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
+                <div class="text-center group">
+                    <div class="relative w-40 h-40 mx-auto mb-6 flex items-center justify-center">
+                        <div class="absolute inset-0 rounded-full border-2 border-dashed border-cyan-500/30 group-hover:rotate-180 transition-transform duration-1000"></div>
+                        <div class="w-36 h-36 rounded-full overflow-hidden border-4 border-white/5 grayscale group-hover:grayscale-0 transition-all duration-300 relative">
+                            <img src="Image/victor.jpeg" alt="Victor Schulz" class="w-full h-full object-cover object-center">
+                        </div>
+                    </div>
+                    <h4 class="font-orbitron text-white text-sm uppercase mb-1">Victor Schulz</h4>
+                    <p class="font-mono text-[10px] text-cyan-500 uppercase tracking-widest mb-4">COM BOARD</p>
+                </div>
+                <div class="text-center group">
+                    <div class="relative w-40 h-40 mx-auto mb-6 flex items-center justify-center">
+                        <div class="absolute inset-0 rounded-full border-2 border-dashed border-cyan-500/30 group-hover:rotate-180 transition-transform duration-1000"></div>
+                        <div class="w-36 h-36 rounded-full overflow-hidden border-4 border-white/5 grayscale group-hover:grayscale-0 transition-all duration-300 relative">
+                            <img src="Image/edgar.png" alt="Edgar Mujuni" class="w-full h-full object-cover object-center">
+                        </div>
+                    </div>
+                    <h4 class="font-orbitron text-white text-sm uppercase mb-1">Edgar Mujuni</h4>
+                    <p class="font-mono text-[10px] text-cyan-500 uppercase tracking-widest mb-4">EPS BOARD</p>
+                </div>
+                <div class="text-center group">
+                    <div class="relative w-40 h-40 mx-auto mb-6 flex items-center justify-center">
+                        <div class="absolute inset-0 rounded-full border-2 border-dashed border-cyan-500/30 group-hover:rotate-180 transition-transform duration-1000"></div>
+                        <div class="w-36 h-36 rounded-full overflow-hidden border-4 border-white/5 grayscale group-hover:grayscale-0 transition-all duration-300 relative">
+                            <img src="Image/sirash.jpeg" alt="Sirash Sayanju" class="w-full h-full object-cover object-center">
+                        </div>
+                    </div>
+                    <h4 class="font-orbitron text-white text-sm uppercase mb-1">Sirash Sayanju</h4>
+                    <p class="font-mono text-[10px] text-cyan-500 uppercase tracking-widest mb-4">Mission Board</p>
+                </div>
+                <div class="text-center group">
+                    <div class="relative w-40 h-40 mx-auto mb-6 flex items-center justify-center">
+                        <div class="absolute inset-0 rounded-full border-2 border-dashed border-cyan-500/30 group-hover:rotate-180 transition-transform duration-1000"></div>
+                        <div class="w-36 h-36 rounded-full overflow-hidden border-4 border-white/5 grayscale group-hover:grayscale-0 transition-all duration-300 relative">
+                            <img src="Image/Eliza.jpeg" alt="Eliza Sapkota" class="w-full h-full object-cover object-center">
+                        </div>
+                    </div>
+                    <h4 class="font-orbitron text-white text-sm uppercase mb-1">Eliza Sapkota</h4>
+                    <p class="font-mono text-[10px] text-cyan-500 uppercase tracking-widest mb-4">Backplane Board</p>
+                </div>
+                <div class="text-center group">
+                    <div class="relative w-40 h-40 mx-auto mb-6 flex items-center justify-center">
+                        <div class="absolute inset-0 rounded-full border-2 border-dashed border-cyan-500/30 group-hover:rotate-180 transition-transform duration-1000"></div>
+                        <div class="w-36 h-36 rounded-full overflow-hidden border-4 border-white/5 grayscale group-hover:grayscale-0 transition-all duration-300 relative">
+                            <img src="Image/Karen.jpeg" alt="Karen Vidaurre" class="w-full h-full object-cover object-center">
+                        </div>
+                    </div>
+                    <h4 class="font-orbitron text-white text-sm uppercase mb-1">Karen Vidaurre</h4>
+                    <p class="font-mono text-[10px] text-cyan-500 uppercase tracking-widest mb-4">Access Board</p>
+                </div>
+                <div class="text-center group">
+                    <div class="relative w-40 h-40 mx-auto mb-6 flex items-center justify-center">
+                        <div class="absolute inset-0 rounded-full border-2 border-dashed border-cyan-500/30 group-hover:rotate-180 transition-transform duration-1000"></div>
+                        <div class="w-36 h-36 rounded-full overflow-hidden border-4 border-white/5 grayscale group-hover:grayscale-0 transition-all duration-300 relative">
+                            <img src="Image/otani.jpeg" alt="Karen Vidaurre" class="w-full h-full object-cover object-center">
+                        </div>
+                    </div>
+                    <h4 class="font-orbitron text-white text-sm uppercase mb-1">Yukihisa Otani</h4>
+                    <p class="font-mono text-[10px] text-cyan-500 uppercase tracking-widest mb-4">Developement Board </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Slideshow -->
+    <section id="gallery" class="py-24 glass border-y border-white/5">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex justify-between items-end mb-12">
+                <div>
+                    <h2 class="font-orbitron text-4xl font-bold mb-4 uppercase">Project Details</h2>
+                    <p class="font-mono text-cyan-500 uppercase text-xs tracking-widest">Building the future of space together</p>
+                </div>
+                <div class="flex space-x-4 mb-2">
+                    <button onclick="moveSlider(-1)" class="w-12 h-12 rounded-full border border-cyan-500/50 flex items-center justify-center hover:bg-cyan-500 hover:text-black transition-all">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button onclick="moveSlider(1)" class="w-12 h-12 rounded-full border border-cyan-500/50 flex items-center justify-center hover:bg-cyan-500 hover:text-black transition-all">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="slider" class="slider-container">
+                <div class="slide">
+                    <img src="Image/obc_des.png" alt="Lab Work">
+                    <div class="slide-overlay">
+                        <h3 class="font-orbitron text-xl text-green-500 uppercase">On Board Computer</h3>
+                        <p class="text-sm text-slate-400 max-w-md">Functionality</p>
+                    </div>
+                </div>
+                <div class="slide">
+                    <img src="Image/OBC.png" alt="Bus Assembly">
+                    <div class="slide-overlay">
+                        <h3 class="font-orbitron text-xl text-green-500 uppercase">On Board Computer</h3>
+                        <p class="text-sm text-slate-400 max-w-md">Based on BIRDS-X and VERTECS Satelltie </p>
+                    </div>
+                </div>
+                <div class="slide">
+                    <img src="Image/EPS_DS.png" alt="Thermal Testing">
+                    <div class="slide-overlay">
+                        <h3 class="font-orbitron text-xl text-green-500 uppercase">Power Distribution </h3>
+                        <p class="text-sm text-slate-400 max-w-md">Electrical Power System board for managing satellite power distribution.</p>
+                    </div>
+                </div>
+                <div class="slide">
+                    <img src="Image/EPS.png" alt="Thermal Testing">
+                    <div class="slide-overlay">
+                        <h3 class="font-orbitron text-xl text-green-500 uppercase">EPS Board</h3>
+                        <p class="text-sm text-slate-400 max-w-md">Electrical Power System board for managing satellite power distribution.</p>
+                    </div>
+                </div>
+                <div class="slide">
+                    <img src="Image/EPS_board.png" alt="Thermal Testing">
+                    <div class="slide-overlay">
+                        <h3 class="font-orbitron text-xl text-green-500 uppercase">EPS Board Functionality</h3>
+                        <p class="text-sm text-slate-400 max-w-md">Manages power distribution and regulation for all satellite subsystems.</p>
+                    </div>
+                </div>
+                <div class="slide">
+                    <img src="Image/COM_GS.png" alt="Ground Station">
+                    <div class="slide-overlay">
+                        <h3 class="font-orbitron text-xl text-green-500 uppercase">XBEE based COM Ground System</h3>
+                        <p class="text-sm text-slate-400 max-w-md">Enables communication between ground stations and the satellite using XBEE modules.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NEW SECTION: PDF Datasheet Viewer -->
+    <section id="datasheet" class="py-24 bg-[#0a0e14]">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="font-orbitron text-4xl font-bold mb-4 uppercase tracking-tighter text-white">Technical Documentation</h2>
+                <p class="font-mono text-cyan-500 uppercase text-xs tracking-widest">SkyTech OBC Schematics</p>
+            </div>
+            
+            <div class="pdf-container glass">
+                <!-- Replace path with your actual PDF location -->
+                <iframe src="Image/Parks_obc_SCH_V2_Aug.pdf" type="application/pdf" width="100%" height="100%" style="border: none;">
+                    <div class="flex items-center justify-center h-full p-20 text-center">
+                        <div>
+                            <i class="fa-solid fa-file-pdf text-6xl text-red-500 mb-6"></i>
+                            <h3 class="font-orbitron text-2xl mb-4 uppercase">Document Viewer Offline</h3>
+                            <p class="text-slate-400 mb-8">Your browser does not support inline PDF viewing or the file path is incorrect.</p>
+                            <a href="./Docs/SkyTech_Datasheet.pdf" download class="px-8 py-3 bg-cyan-500 text-black font-orbitron font-bold rounded uppercase tracking-widest hover:bg-white transition-all">Download PDF</a>
+                        </div>
+                    </div>
+                </iframe>
+            </div>
+            <div class="mt-8 text-center">
+                <p class="font-mono text-[10px] text-slate-500 uppercase tracking-[0.2em]">Ref: KS4E-OBC-DS-V1.2 // SECURE DATA LINK //KS4E</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Video Cinema Section -->
+    <section id="video" class="py-24 bg-[#05070a]">
+        <div class="max-w-5xl mx-auto px-6 text-center">
+            <div class="text-center mb-16">
+                <h2 class="font-orbitron text-4xl font-bold mb-4 uppercase tracking-tighter">KIT Internal Configuration</h2>
+                <p class="font-mono text-cyan-500 uppercase text-xs tracking-widest">Watch the SkyTech kit in action</p>
+            </div>
+            
+            <div class="video-wrapper glass">
+                <video controls poster="http://googleusercontent.com/image_collection/image_retrieval/12529311453438099121">
+                    <source src="./Video/KIT_ASSe.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            
+            <div class="mt-8 p-6 glass rounded-xl border border-cyan-500/20 text-center">
+                <p class="font-mono text-xs text-slate-400 uppercase tracking-[0.2em]">SkyTech kit in action</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3D Hardware Explorer -->
+    <section id="hardware" class="py-24 bg-black">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid lg:grid-cols-4 gap-8">
+                <div class="lg:col-span-1 space-y-4">
+                    <h3 class="font-orbitron text-2xl font-bold text-white mb-6 uppercase tracking-widest">Assets</h3>
+                    <button onclick="update3D('assembly', this)" class="hardware-btn w-full p-4 glass border-l-4 border-cyan-400 text-left active group transition-all">
+                        <div class="font-bold uppercase tracking-widest text-xs group-hover:text-cyan-400">KIT ASSEMBLY</div>
+                    </button>
+                    <button onclick="update3D('obc', this)" class="hardware-btn w-full p-4 glass border-l-4 border-transparent text-left group transition-all">
+                        <div class="font-bold uppercase tracking-widest text-xs group-hover:text-cyan-400">OBC Board</div>
+                    </button>
+                    <button onclick="update3D('eps', this)" class="hardware-btn w-full p-4 glass border-l-4 border-transparent text-left group transition-all">
+                        <div class="font-bold uppercase tracking-widest text-xs group-hover:text-cyan-400">EPS Board</div>
+                    </button>
+                    <button onclick="update3D('com', this)" class="hardware-btn w-full p-4 glass border-l-4 border-transparent text-left group transition-all">
+                        <div class="font-bold uppercase tracking-widest text-xs group-hover:text-cyan-400">COM Board</div>
+                    </button>
+                    <button onclick="update3D('mission', this)" class="hardware-btn w-full p-4 glass border-l-4 border-transparent text-left group transition-all">
+                        <div class="font-bold uppercase tracking-widest text-xs group-hover:text-cyan-400">MSN Board</div>
+                    </button>
+                    <button onclick="update3D('access', this)" class="hardware-btn w-full p-4 glass border-l-4 border-transparent text-left group transition-all">
+                        <div class="font-bold uppercase tracking-widest text-xs group-hover:text-cyan-400">Backplane</div>
+                    </button>
+                </div>
+                <div class="lg:col-span-3 glass rounded-2xl overflow-hidden relative">
+                    <div id="hw-loading-overlay" class="absolute inset-0 z-10 bg-black/80 flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity">
+                        <div class="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    <model-viewer id="hardware-viewer" src="3d/Boardwith_structure.glb" auto-rotate camera-controls shadow-intensity="1" exposure="0.4">
+                        <div class="absolute top-6 right-6 p-4 glass text-right">
+                            <h4 id="asset-title" class="font-orbitron text-lg text-white uppercase">1U Assembly</h4>
+                            <p id="asset-desc" class="text-[10px] font-mono text-cyan-500 uppercase">Fully Integrated Bus</p>
+                        </div>
+                    </model-viewer>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mission Control Simulator -->
+    <section id="terminal" class="py-24 bg-[#080a0f]">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="font-orbitron text-4xl font-bold mb-4 uppercase">Simulator</h2>
+                <p class="font-mono text-cyan-500 tracking-widest uppercase text-xs">Live Telecommand Uplink</p>
+            </div>
+            <div class="terminal-container">
+                <div class="terminal-header">
+                    <div class="flex space-x-2">
+                        <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                    </div>
+                    <div class="text-[10px] font-mono text-slate-500 uppercase">KS4E_BUS_LOG_V1 // STATUS: NOMINAL</div>
+                </div>
+                <div id="terminal-body" class="terminal-body">
+                    <div class="ascii-banner">
+ dP   dP   d8888b dP   dP 88888888P    .88888. 8888ba    .88888b. 
+ 88  .P'  88'  `8 88   88 88          88'  `88 88    8b  d8'   `88 
+ 88aa8'  `Y8ooooo. 88aa88 88aaaa      88    88 88    8P' 88        
+ 88  `8b.      88      88 88          88    88 88aaa8b   88        
+ 88   88. 88.  .88     88 88          88.  .88 88    88  Y8.   .88 
+ dP   dP  `88888P'     dP 88888888P   `88888P  dP dPdP   `88888P' 
+                    </div>
+                    <div>[SYS] INITIALIZING KERNEL...</div>
+                    <div>[SYS] LOADING PERIPHERALS... OK</div>
+                    <div>[SYS] RADIO LINK ESTABLISHED: </div>
+                    <div>[SYS] KS4E OBC ONLINE. COMPILED: FEB 2026</div>
+                    <div class="mt-4 text-white uppercase">> READY FOR TELECOMMAND...</div>
+                </div>
+                <div class="p-4 bg-black/50 border-t border-white/10 grid grid-cols-3 gap-4">
+                    <button onclick="terminalSim('telemetry')" class="p-3 border border-cyan-500/30 text-cyan-400 font-mono text-[10px] hover:bg-cyan-500 hover:text-black transition-all">TLM_REQ</button>
+                    <button onclick="terminalSim('capture')" class="p-3 border border-green-500/30 text-green-400 font-mono text-[10px] hover:bg-green-500 hover:text-black transition-all">CAM_EXE</button>
+                    <button onclick="terminalSim('reset')" class="p-3 border border-red-500/30 text-red-400 font-mono text-[10px] hover:bg-red-500 hover:text-black transition-all">SYS_RST</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Subsystem Specifications -->
+    <section id="subsystems" class="py-24">
+        <div class="max-w-7xl mx-auto px-6">
+            <h2 class="font-orbitron text-3xl font-bold mb-12 uppercase border-l-4 border-cyan-500 pl-6">Specifications</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="p-8 glass rounded-2xl">
+                    <h3 class="font-orbitron text-cyan-400 mb-6 uppercase text-sm">OBC Architecture</h3>
+                    <ul class="text-[11px] font-mono space-y-4 text-slate-400">
+                        <li class="flex justify-between border-b border-white/5 pb-2"><span>MCU:</span> <span class="text-white">PIC18F67J94</span></li>
+                        <li class="flex justify-between border-b border-white/5 pb-2"><span>Watchdog:</span> <span class="text-white">External Timer</span></li>
+                        <li class="flex justify-between border-b border-white/5 pb-2"><span>Memory:</span> <span class="text-white">MT25QL Flash</span></li>
+                    </ul>
+                </div>
+                <div class="p-8 glass rounded-2xl">
+                    <h3 class="font-orbitron text-cyan-400 mb-6 uppercase text-sm">Power (EPS)</h3>
+                    <ul class="text-[11px] font-mono space-y-4 text-slate-400">
+                        <li class="flex justify-between border-b border-white/5 pb-2"><span>Output 1:</span> <span class="text-white">12V Boost</span></li>
+                        <li class="flex justify-between border-b border-white/5 pb-2"><span>Output 2:</span> <span class="text-white">3.3V Buck</span></li>
+                        <li class="flex justify-between border-b border-white/5 pb-2"><span>Protection:</span> <span class="text-white">OCP (LTC4361)</span></li>
+                    </ul>
+                </div>
+                <div class="p-8 glass rounded-2xl">
+                    <h3 class="font-orbitron text-cyan-400 mb-6 uppercase text-sm">Comm Link</h3>
+                    <ul class="text-[11px] font-mono space-y-4 text-slate-400">
+                        <li class="flex justify-between border-b border-white/5 pb-2"><span>Tranceiver:</span> <span class="text-white">XBee Series 2</span></li>
+                        <li class="flex justify-between border-b border-white/5 pb-2"><span>Bridge:</span> <span class="text-white">FTDI USB/UART</span></li>
+                        <li class="flex justify-between border-b border-white/5 pb-2"><span>Mode:</span> <span class="text-white">TX / CW / RX</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analysis Section -->
+    <section id="compare" class="py-24 glass border-y border-cyan-900/30">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="font-orbitron text-4xl font-bold mb-4 uppercase tracking-tighter">Competitive Edge</h2>
+                <p class="font-mono text-slate-500 uppercase text-xs tracking-widest">Why the BIRDS platform leads for training</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full comparison-table">
+                    <thead>
+                        <tr>
+                            <th class="w-1/4">Feature</th>
+                            <th class="w-1/4 text-cyan-400">SkySat Kit</th>
+                            <th class="w-1/4">Standard DIY</th>
+                            <th class="w-1/4">Commercial Kit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="font-bold text-slate-300">Open Source</td>
+                            <td class="text-cyan-400">GitHub Public</td>
+                            <td class="text-slate-500">Yes</td>
+                            <td class="text-slate-500">Proprietary</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold text-slate-300">Heritage</td>
+                            <td class="text-cyan-400">15+ Satellites</td>
+                            <td class="text-slate-500">Unproven</td>
+                            <td class="text-slate-500">High</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold text-slate-300">Wiring</td>
+                            <td class="text-cyan-400">Zero (Backplane)</td>
+                            <td class="text-slate-500">Complex</td>
+                            <td class="text-slate-500">Medium</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold text-slate-300">Efficiency</td>
+                            <td class="text-cyan-400 font-orbitron">EXCELLENT</td>
+                            <td class="text-slate-500">Good</td>
+                            <td class="text-slate-500">Expensive</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-12 border-t border-white/5 text-center">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col items-center">
+            <div class="flex items-center space-x-2 mb-6">
+                 <i class="fa-solid fa-satellite-dish text-cyan-400 text-xl"></i>
+                 <span class="font-orbitron font-bold text-sm tracking-widest text-white uppercase">Kyutech Space Solutions for Emergings</span>
+            </div>
+            <p class="font-mono text-[9px] text-slate-600 uppercase tracking-[0.4em] max-w-md">
+                Kyushu Institute of Technology
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        const assets = {
+            assembly: { title: "KIT ASSEMBLY", desc: "Integrated Flight Bus", src: "./3d/Boardwith_structure.glb" },
+            obc: { title: "OBC Board", desc: "Command & Data Logic", src: "./3d/OBC.glb" },
+            eps: { title: "EPS Board", desc: "Power Management", src: "./3d/EPS.glb" },
+            com: { title: "COM Board", desc: "Communication Hub", src: "./3d/COM.glb" },
+            mission: { title: "MSN Board", desc: "Payload Interface", src: "./3d/MB.glb" },
+            access: { title: "Backplane", desc: "System Interconnect", src: "./3d/BP.glb" }
+        };
+
+        function update3D(key, btn) {
+            const asset = assets[key];
+            const viewer = document.getElementById('hardware-viewer');
+            const overlay = document.getElementById('hw-loading-overlay');
+            overlay.classList.remove('opacity-0');
+            
+            document.querySelectorAll('.hardware-btn').forEach(b => {
+                b.classList.remove('border-cyan-400','active');
+                b.classList.add('border-transparent');
+            });
+            btn.classList.add('border-cyan-400','active');
+            btn.classList.remove('border-transparent');
+            
+            document.getElementById('asset-title').innerText = asset.title;
+            document.getElementById('asset-desc').innerText = asset.desc;
+            
+            setTimeout(() => {
+                viewer.src = asset.src;
+                overlay.classList.add('opacity-0');
+            }, 600);
+        }
+
+        function moveSlider(dir) {
+            const slider = document.getElementById('slider');
+            const scrollAmount = slider.offsetWidth;
+            slider.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
+        }
+
+        function terminalSim(cmd) {
+            const body = document.getElementById('terminal-body');
+            const time = new Date().toLocaleTimeString();
+            let msg = "";
+            if(cmd === 'telemetry') msg = `<div>[${time}] > UPLINK: GET_TLM</div><div class="text-white">BATT: 4.1V | T_CPU: 24.5C | MODE: SCIENCE</div>`;
+            if(cmd === 'capture') msg = `<div>[${time}] > UPLINK: CAM_EXE</div><div class="text-white">CAM: EXPOSURE_START... IMAGE_SAVED_SEC_0x04</div>`;
+            if(cmd === 'reset') msg = `<div class="text-red-500">[${time}] > UPLINK: SYS_RESET</div><div class="text-yellow-500">SYS: REBOOTING CORE... KERNEL RELOAD OK</div>`;
+            body.innerHTML += msg;
+            body.scrollTop = body.scrollHeight;
+        }
+
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('opacity-100', 'translate-y-0'); } });
+        });
+        document.querySelectorAll('section').forEach(s => {
+            s.classList.add('opacity-0', 'translate-y-10', 'transition-all', 'duration-1000');
+            observer.observe(s);
+        });
+    </script>
+</body>
+</html>
